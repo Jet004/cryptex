@@ -1,0 +1,149 @@
+html,
+body {
+    width: 100%;
+    min-width: 370px;
+    height: 100%;
+    font-family: roboto;
+}
+
+#bootstrap-overrides .border-secondary {
+    border-color: #555 !important;
+}
+
+.logo {
+    filter: drop-shadow( 1px 1px 6px rgb(127, 255, 212));
+}
+
+header {
+    height: 60px;
+}
+header a {
+    text-decoration: none;
+    cursor: pointer;
+}
+
+header span {
+    font-family: roboto;
+}
+
+header .brand {
+    font-size: 24px;
+    vertical-align: baseline;
+}
+
+header .product {
+    font-size: 20px;
+    vertical-align: baseline;
+}
+
+#page-container {
+    min-height: calc(100% - (60px + 100px));
+}
+
+aside {
+    position: relative;
+}
+
+#side-link-cont > a {
+    width: 60%;
+    margin-top: 14px;
+    font-family: roboto;
+    font-size: 16px;
+    text-decoration: none;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+}
+
+#side-link-cont > a > img {
+    width: 38px;
+}
+
+.navbar {
+    font-size: 20px;
+}
+
+#bootstrap-overrides .nav-item {
+    cursor: pointer;
+}
+
+#bootstrap-overrides .nav-item .active {
+    color: #ffc107;
+    border-bottom: 1px solid #ffc107;
+    transition: all 0.2s ease;
+}
+
+#bootstrap-overrides .navbar-toggler {
+    position: absolute;
+    top: -47px;
+    right: 10px;
+    padding: 0px;
+}
+
+#bootstrap-overrides .navbar-toggler:hover,
+#bootstrap-overrides .navbar-toggler:focus {
+    box-shadow: 0 0 0 1px #666;
+    transition:box-shadow .2s ease-in-out
+}
+
+main section {
+    display: none;
+}
+
+main section .active {
+    display: block;
+}
+
+#bootstrap-overrides #home-page .col {
+    width: 70% !important;
+}
+
+main .brand {
+    font-size: 40px;
+    vertical-align: baseline;
+}
+
+main .product {
+    font-size: 32px;
+    vertical-align: baseline;
+}
+
+main #home-slogan {
+    font-size: 18px;
+    letter-spacing: 4px;
+}
+
+#charts-page div {
+    width: 100%;
+    height: 450px;
+}
+
+tbody img {
+    width: 25px;
+}
+
+td {
+    cursor: pointer;
+}
+
+#limit-price {
+    display: none;
+}
+
+#v-line {
+    position: absolute;
+    right: 0px;
+}
+
+#v-line > .line {
+    stroke-width:2;
+    stroke:#ffc107;
+}
+
+footer {
+    height: 100px;
+}
+
+footer span {
+    font-family: roboto;
+}
