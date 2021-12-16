@@ -1,39 +1,39 @@
 //-------------------------> START SVG DYNAMIC HEIGHT LOGIC
 const loadSVGLine = () => {
-  // Get height of page-container
-  let sideBar = document.getElementById("side-bar");
-  let sideBarHeight = sideBar.offsetHeight;
-  let sideBarWidth = sideBar.offsetWidth;
-  // Get svg verticle line
-  let vLine = document.getElementById("v-line");
-  let line = document.querySelector("#v-line > line");
-  vLine.setAttribute("width", "1px");
-  vLine.setAttribute("height", sideBarHeight);
-  line.setAttribute("x1", "1");
-  line.setAttribute("y1", "0");
-  line.setAttribute("x2", "1");
-  line.setAttribute("y2", sideBarHeight);
+    // Get height of page-container
+    let sideBar = document.getElementById("side-bar");
+    let sideBarHeight = sideBar.offsetHeight;
+    let sideBarWidth = sideBar.offsetWidth;
+    // Get svg verticle line
+    let vLine = document.getElementById("v-line");
+    let line = document.querySelector("#v-line > line");
+    vLine.setAttribute("width", "1px");
+    vLine.setAttribute("height", sideBarHeight);
+    line.setAttribute("x1", "1");
+    line.setAttribute("y1", "0");
+    line.setAttribute("x2", "1");
+    line.setAttribute("y2", sideBarHeight);
 };
 
 //-------------------------> START TRADINGVIEW LOGIC
 
 // Create tradingview widget
 let loadTVWidget = () => {
-  new TradingView.widget({
-    autosize: true,
-    symbol: "BITSTAMP:BTCUSD",
-    interval: "D",
-    timezone: "Australia/Brisbane",
-    theme: "dark",
-    style: "1",
-    locale: "en",
-    toolbar_bg: "#f1f3f6",
-    enable_publishing: false,
-    withdateranges: true,
-    hide_side_toolbar: false,
-    allow_symbol_change: true,
-    container_id: "tradingview_45903",
-  });
+    new TradingView.widget({
+        autosize: true,
+        symbol: "BITSTAMP:BTCUSD",
+        interval: "D",
+        timezone: "Australia/Brisbane",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        toolbar_bg: "#f1f3f6",
+        enable_publishing: false,
+        withdateranges: true,
+        hide_side_toolbar: false,
+        allow_symbol_change: true,
+        container_id: "tradingview_45903",
+    });
 };
 
 //-------------------------> START SPA LOGIC
@@ -41,248 +41,353 @@ let loadTVWidget = () => {
 let navLinks = document.getElementsByClassName("nav-link");
 
 // Function to handle page changes and remember last page visited
-const changePage = (e) => {
-  let clickedLink = e.target;
-  // Return if clicked link already active
-  if (clickedLink.classList.contains("active")) return;
-  // Set correct active status for all nav links
-  for (link of navLinks) {
-    link === clickedLink
-      ? link.classList.add("active")
-      : link.classList.remove("active");
-  }
+const changePage = e => {
+    let clickedLink = e.target;
+    // Return if clicked link already active
+    if (clickedLink.classList.contains("active")) return;
+    // Set correct active status for all nav links
+    for (link of navLinks) {
+        link === clickedLink ? link.classList.add("active") : link.classList.remove("active");
+    }
 
-  // Get id stub from nav link so we can correctly identify the page to change to
-  let pageID = clickedLink.id.split("-")[0] + "-page";
+    // Get id stub from nav link so we can correctly identify the page to change to
+    let pageID = clickedLink.id.split("-")[0] + "-page";
 
-  // Get all page sections so we can change the display to the correct content
-  let pages = document.getElementsByClassName("page");
-  // Set correct display settings for each page
-  for (page of pages) {
-    page.id === pageID
-      ? (page.style.display = "flex")
-      : (page.style.display = "none");
-  }
+    // Get all page sections so we can change the display to the correct content
+    let pages = document.getElementsByClassName("page");
+    // Set correct display settings for each page
+    for (page of pages) {
+        page.id === pageID ? (page.style.display = "flex") : (page.style.display = "none");
+    }
 
-  // Call loadTVWidget so chart loads when directed to charts page
-  if (pageID === "charts-page") {
-    loadTVWidget();
-  } else {
-    // Destroy existing widget
-    document.getElementById("tradingview_45903").innerHTML = "";
-  }
-  // Set current page to localStorage
-  localStorage.setItem("page", pageID.split("-")[0]);
+    // Call loadTVWidget so chart loads when directed to charts page
+    if (pageID === "charts-page") {
+        loadTVWidget();
+    } else {
+        // Destroy existing widget
+        document.getElementById("tradingview_45903").innerHTML = "";
+    }
+    // Set current page to localStorage
+    localStorage.setItem("page", pageID.split("-")[0]);
 
-  // Reset SVG line length
-  loadSVGLine();
+    // Reset SVG line length
+    loadSVGLine();
 };
 
 // Set click event listener on all nav links
 for (link of navLinks) {
-  link.addEventListener("click", changePage);
+    link.addEventListener("click", changePage);
 }
 
 // Set click event listener on top brand link to change to home page
 document.getElementById("brand-link").addEventListener("click", () => {
-  document.getElementById("home-link").click();
+    document.getElementById("home-link").click();
 });
+
+let delayTVLoad;
+window.onresize = () => {
+    // Get TV widget parent and clear iframe if chart page is the active page
+    if (currentPage === "charts") {
+        let tvWidget = (document.getElementById("tradingview_45903").innerHTML = "");
+        clearTimeout(delayTVLoad);
+        delatTVLoad = setTimeout(loadTVWidget, 100);
+    }
+
+    // Reset svg separator's size/position
+    loadSVGLine();
+};
 
 //-------------------------> END SPA LOGIC
 
 //-------------------------> START LOCALSTORAGE LOGIC
 
+// Handle page load when client reopens site
 let currentPage = localStorage.getItem("page");
 if (!currentPage) currentPage = "home";
 document.getElementById(currentPage + "-link").click();
 
-let delayTVLoad;
-window.onresize = () => {
-  // Get TV widget parent and clear iframe if chart page is the active page
-  if (currentPage === "charts") {
-    let tvWidget = (document.getElementById("tradingview_45903").innerHTML =
-      "");
-    clearTimeout(delayTVLoad);
-    delatTVLoad = setTimeout(loadTVWidget, 100);
-  }
+// Set initial state
+const setInitialState = () => {
+    if(!localStorage.getItem("currentPriceData")) localStorage.setItem("currentPriceData", '{}')
+    if(!localStorage.getItem("openLimitOrders")) localStorage.setItem("openLimitOrders", '[]')
+    if(!localStorage.getItem("openPositions")) localStorage.setItem("openPositions", '[]')
+    if(!localStorage.getItem("orderHistory")) localStorage.setItem("orderHistory", '[]')
+    if(!localStorage.getItem("cashBalance")) localStorage.setItem("cashBalance", '100000')
+}
 
-  // Reset svg separator's size/position
-  loadSVGLine();
-};
+setInitialState()
+
+// Reset trading account
+const resetTradingAccoung = () => {
+    const confirmReset = confirm("Do you really want to delete all trading account data? This operation can't be undone")
+    if(confirmReset){
+        localStorage.clear()
+        localStorage.setItem("page", currentPage)
+        setInitialState()
+    }
+}
+
+document.getElementById('reset-account-btn').addEventListener('click', () => {
+    resetTradingAccoung()
+})
+
+const adjustCashBalance = (amount) => {
+    let cashBalance = Number(localStorage.getItem("cashBalance"))
+    cashBalance += amount
+    localStorage.setItem("cashBalance", cashBalance)
+}
+
+const adjustOpenPositions = (order) => {
+    let openPositions = JSON.parse(localStorage.getItem("openPositions"))
+    let coinPosition = openPositions.filter(position => position.coin === order.coin)
+
+    if(order.type === "Buy") {
+        if(coinPosition.length === 0) {
+            openPositions.push({
+                coin: order.coin,
+                quantity: order.quantity,
+                averagePrice: order.price
+            })
+            console.log(openPositions)
+        } else if(coinPosition.length > 0) {
+            let totalQuantity = coinPosition[0].quantity + order.quantity
+            let averagePrice = ((coinPosition[0].quantity * coinPosition[0].averagePrice) + (order.quantity * order.price))/totalQuantity
+            let position = openPositions[openPositions.indexOf(coinPosition[0])]
+
+            position.quantity = totalQuantity
+            position.averagePrice = averagePrice
+        }
+    } else if(order.type === "Sell") {
+        if(coinPosition.length === 0) {
+            console.log("error: you can't sell a coin which you don't already own.")
+        } else if(coinPosition.length > 0) {
+            let position = openPositions[openPositions.indexOf(coinPosition[0])]
+
+            if(order.quantity === position.quantity){
+                openPositions.pop(position)
+            } else if(order.quantity > 0 && order.quantity < position.quantity) {
+                position.quantity -= order.quantity
+            }
+        }
+    }
+
+    localStorage.setItem('openPositions', JSON.stringify(openPositions))
+}
+
+const updateOrderHistory = (order) => {
+    let orderHistory = JSON.parse(localStorage.getItem('orderHistory'))
+    orderHistory.push(order)
+    localStorage.setItem('orderHistory', JSON.stringify(orderHistory))
+}
+
+const executeOrder = (type, coin, qty, price) => {
+    console.log(type, coin, qty, price)
+    const order = {
+        type: type,
+        coin: coin,
+        quantity: qty,
+        price: price
+    }
+
+    // Adjust cash balance
+    if( type === "Buy" )  adjustCashBalance(-( qty * price ))
+    if( type === "Sell" ) adjustCashBalance( ( qty * price ))
+
+    // Update open positions
+    adjustOpenPositions( order )
+
+    // Enter order to orderHistory
+    updateOrderHistory( order )
+}
 
 //-------------------------> END LOCALSTORAGE LOGIC
 
-// Object with crypto data
+//-------------------------> START LIVE DATA LOGIC
+
+// Set default coin list
+let coinList = ["BTC", "ETH", "BNB", "ADA", "SOL", "XRP", "DOT", "LTC", "LINK", "UNI", "ALGO"];
 
 let cryptoData = {
-  BTC: {
-    rank: 1,
-    imgPath: "./images/btc.svg",
-    name: "Bitcoin",
-    code: "BTC",
-    price: 65300,
-    mcap: "1,229,447,708,943",
-    change: 1.56,
-  },
-  ETH: {
-    rank: 2,
-    imgPath: "./images/eth.svg",
-    name: "Ethereum",
-    code: "ETH",
-    price: 4788,
-    mcap: "567,006,255,493",
-    change: 4.34,
-  },
-  BNB: {
-    rank: 3,
-    imgPath: "./images/bnb.svg",
-    name: "Binance",
-    code: "BNB",
-    price: 632,
-    mcap: "105,837,629,126",
-    change: 4.21,
-  },
-  ADA: {
-    rank: 4,
-    imgPath: "./images/ada.svg",
-    name: "Cardano",
-    code: "ADA",
-    price: 2.1,
-    mcap: "69,506,655,717",
-    change: 1.52,
-  },
-  SOL: {
-    rank: 5,
-    imgPath: "./images/sol.svg",
-    name: "Solana",
-    code: "SOL",
-    price: 237.54,
-    mcap: "71,713,797,279",
-    change: 1.12,
-  },
-  XRP: {
-    rank: 6,
-    imgPath: "./images/xrp.svg",
-    name: "XRP",
-    code: "XRP",
-    price: 1.22,
-    mcap: "57,753,046,781",
-    change: 2.84,
-  },
-  DOT: {
-    rank: 7,
-    imgPath: "./images/dot.svg",
-    name: "Polkadot",
-    code: "DOT",
-    price: 47.18,
-    mcap: "46,589,246,297",
-    change: 2.42,
-  },
-  LTC: {
-    rank: 8,
-    imgPath: "./images/ltc.svg",
-    name: "Litecoin",
-    code: "LTC",
-    price: 275.82,
-    mcap: "19,018,231,448",
-    change: 7.14,
-  },
-  LINK: {
-    rank: 9,
-    imgPath: "./images/link.svg",
-    name: "Chainlink",
-    code: "LINK",
-    price: 35.29,
-    mcap: "16,373,766,859",
-    change: 2.79,
-  },
-  UNI: {
-    rank: 10,
-    imgPath: "./images/uni.svg",
-    name: "Uniswap",
-    code: "UNI",
-    price: 25.62,
-    mcap: "16,080,812,807",
-    change: 1.74,
-  },
-  ALGO: {
-    rank: 11,
-    imgPath: "./images/algo.svg",
-    name: "Algorand",
-    code: "ALGO",
-    price: 2.11,
-    mcap: "13,203,675,640",
-    change: 10.04,
-  },
+    BTC: "Bitcoin",
+    ETH: "Ethereum",
+    BNB: "Binance",
+    ADA: "Cardano",
+    SOL: "Solana",
+    XRP: "XRP",
+    DOT: "Polkadot",
+    LTC: "Litecoin",
+    LINK: "Chainlink",
+    UNI: "Uniswap",
+    ALGO: "Algorand",
 };
 
-let tableOutputHTML = ``;
+// Get data function - returns current crypto prices in AUD
+const getCryptoData = (coins = coinList, currency = "AUD") => {
+    coins = coins.join(",");
+    fetch(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${coins}&tsyms=${currency}`)
+        .then(res => res.json())
+        .then(data => {
+
+            localStorage.setItem('currentPriceData', JSON.stringify(data))
+
+            let changeColor;
+            let tableOutputHTML = ``;
+
+            // Loop over data and put in price table
+            for (let [code, coinData] of Object.entries(data.RAW)) {
+                coinData = coinData.AUD;
+                if (coinData.CHANGEPCT24HOUR >= 0) {
+                    changeColor = "text-success";
+                } else {
+                    changeColor = "text-danger";
+                }
+                tableOutputHTML += `
+                  <tr scope="row" id="coin-${code}">
+                      <td class="td-name"><img src="./images/icon-svg/${code}.svg" alt="${code}"><span class="name px-2">${
+                    cryptoData[code]
+                }</span><span class="code pe-2">${code}</span></td>
+                      <td class="td-price">$ ${Math.round(10000 * coinData.PRICE) / 10000}</td>
+                      <td class="td-mcap d-none d-md-table-cell">$ ${Math.round(coinData.MKTCAP)}</td>
+                      <td class="td-change ${changeColor}">${Math.round(100 * coinData.CHANGEPCT24HOUR) / 100}%</td>
+                  </tr>
+              `;
+            }
+
+            document.getElementById("coin-data-table").innerHTML = tableOutputHTML;
+
+            setRowEventListeners();
+        })
+        .catch(error => {
+            console.error(error);
+        });
+};
+getCryptoData();
+
+const updateData = setInterval(() => {
+    getCryptoData();
+}, 10000);
+
+//-------------------------> END LIVE DATA LOGIC
+
+//-------------------------> START EVENT LISTENERS AND MISC
+
+// Create select list for trade page
 let coinSelectHTML = ``;
 // Loop over data and put in price table
-for (const [key, coin] of Object.entries(cryptoData)) {
-  tableOutputHTML += `
-        <tr scope="row" id="coin-${coin.code}">
-            <td class="td-rank ps-3">${coin.rank}</td>
-            <td class="td-name"><img src="${coin.imgPath}" alt="${coin.code}"><span class="name px-2">${coin.name}</span><span class="code pe-2">${coin.code}</span></td>
-            <td class="td-price">$${coin.price}</td>
-            <td class="td-mcap d-none d-md-table-cell">$${coin.mcap}</td>
-            <td class="td-change">${coin.change}%</td>
-        </tr>
-    `;
-
-  coinSelectHTML += `
-        <option value="${coin.code}">${coin.name}</option>
+for (const [code, name] of Object.entries(cryptoData)) {
+    coinSelectHTML += `
+        <option value="${code}">${name}</option>
     `;
 }
-document.getElementById("coin-data-table").innerHTML = tableOutputHTML;
 document.getElementById("coin").innerHTML += coinSelectHTML;
 
 // Function to set clicked coin's name to trade form and show trade form
-let goToTrade = (coinCode) => {
-  // Set nav link to trade page
-  document.getElementById("trade-link").click();
-  // Set crypto select to clicked crypto
-  document.getElementById("coin").value = coinCode;
+let goToTrade = coinCode => {
+    // Set nav link to trade page
+    document.getElementById("trade-link").click();
+    // Set crypto select to clicked crypto
+    document.getElementById("coin").value = coinCode;
 };
 
 // Set click event listeners on table rows to populate trade form and "redirect"
-let tableRows = document.getElementsByTagName("tr");
-for (row of tableRows) {
-  // Get coin code from row
-  let code = row.id.split("-")[1];
-  row.addEventListener("click", () => {
-    goToTrade(code);
-  });
-}
+const setRowEventListeners = () => {
+    let tableRows = document.getElementsByTagName("tr");
+    for (row of tableRows) {
+        // Get coin code from row
+        let code = row.id.split("-")[1];
+        row.addEventListener("click", () => {
+            goToTrade(code);
+        });
+    }
+};
+setRowEventListeners(); // Call once to set links on first load
 
 // Set click event listeners on side links to populate trade form and "redirect"
 let sideLinks = document.querySelectorAll("#side-link-cont > a > img");
 for (const item of sideLinks) {
-  item.addEventListener("click", () => {
-    goToTrade(item.alt);
-  });
+    item.addEventListener("click", () => {
+        goToTrade(item.alt);
+    });
 }
 
 let showLimitPrice = () => {
-  if (orderType.value === "limit") {
-    // Show limit price input
-    document.getElementById("limit-price").style.display = "block";
-  } else {
-    document.getElementById("limit-price").style.display = "none";
-  }
+    if (orderType.value === "limit") {
+        // Show limit price input
+        document.getElementById("limit-price").style.display = "block";
+    } else {
+        document.getElementById("limit-price").style.display = "none";
+    }
 };
 
 // Set change event listener to show limit price if order type is limit
-let orderType = document.getElementById("buy-sell-select");
+let orderType = document.getElementById("order-type-select");
 orderType.addEventListener("change", showLimitPrice);
 showLimitPrice();
+
+//--------------------------> BUY/SELL LOGIC
+
+const orderFormValid = (form) => {
+    // Validity checks
+    let validForm = true
+
+    if(!["market", "limit"].includes(form['order-type'].value)) validForm = validForm && false
+    if(!coinList.includes(form["coin"].value)) validForm = validForm && false
+    if(!form.quantity.checkValidity()) validForm = validForm && false
+    if(form['order-type'].value === 'limit') {
+        // A limit price must be present
+        if(form['limit-price'].value <= 0 || !form['limit-price'].checkValidity()) validForm = validForm && false
+    }
+    if(!validForm){
+        document.getElementById("order-form-error").innerHTML = "Invalid order: try again"
+    }
+    return validForm
+}
+
+// Clear warnings on new input
+document.getElementById("order-form").addEventListener('input', () => {
+    document.getElementById("order-form-error").innerHTML = ""
+})
+
+// Check that there are enough funds/coins for the order to execute
+const isValidOrder = (e, form, coinPrice) => {
+
+    // Check to see if this is a buy or sell order
+    if(e.target.value === 'Buy') {
+        
+        let currentCashBalance = localStorage.getItem('cashBalance')
+    }
+   
+
+    return true
+}
+
+const submitOrder = (e) => {
+    let form = document.getElementById("order-form");
+    let currentCoinData = JSON.parse(localStorage.getItem('currentPriceData')).RAW[form.coin.value].AUD
+    let coinPrice = currentCoinData.PRICE
+
+    if(orderFormValid(form)) {
+        if(isValidOrder(event, form, coinPrice)) executeOrder(e.target.value, form.coin.value, Number(form.quantity.value), coinPrice)
+    }
+}
+
+document.getElementById("buy-button").addEventListener("click", (e) => {
+    submitOrder(e)
+    
+});
+
+document.getElementById("sell-button").addEventListener("click", (e) => {
+    submitOrder(e)
+});
+
+
 
 //--------------------------> PORTFOLIO LOGIC
 // Get totals from each row in portfolio
 let totals = document.getElementsByClassName("row-total");
 let subtotal = 0;
 for (let total of totals) {
-  subtotal += Number(total.innerHTML);
+    subtotal += Number(total.innerHTML);
 }
 document.getElementById("portfolio-value").innerHTML += subtotal;
 
