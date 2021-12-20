@@ -124,6 +124,7 @@ const resetTradingAccoung = () => {
         localStorage.clear()
         localStorage.setItem("page", currentPage)
         setInitialState()
+        renderPortfolio()
     }
 }
 
@@ -148,6 +149,9 @@ const adjustOpenPositions = (order) => {
                 quantity: order.quantity,
                 averagePrice: order.price
             })
+
+            // TODO: Show success message in message block
+
             console.log(openPositions)
         } else if(coinPosition.length > 0) {
             let totalQuantity = coinPosition[0].quantity + order.quantity
@@ -156,21 +160,35 @@ const adjustOpenPositions = (order) => {
 
             position.quantity = totalQuantity
             position.averagePrice = averagePrice
+
+            // TODO: Show success message in message block
         }
     } else if(order.type === "Sell") {
         if(coinPosition.length === 0) {
+
+            // TODO: Show error message in message block
+
             console.log("error: you can't sell a coin which you don't already own.")
         } else if(coinPosition.length > 0) {
             let position = openPositions[openPositions.indexOf(coinPosition[0])]
 
             if(order.quantity === position.quantity){
+                // Transaction resulted in all owned coins being sold
                 openPositions.pop(position)
+
+                // TODO: Show success message in message block
+
             } else if(order.quantity > 0 && order.quantity < position.quantity) {
+                // Sale quantity was less than the total number of coins on hand
                 position.quantity -= order.quantity
+
+                // TODO: Show success message in message block
+
             }
         }
     }
 
+    // Update local storage data store to reflect the changes of the transaction
     localStorage.setItem('openPositions', JSON.stringify(openPositions))
 }
 
@@ -198,6 +216,9 @@ const executeOrder = (type, coin, qty, price) => {
 
     // Enter order to orderHistory
     updateOrderHistory( order )
+
+    // Update Portfolio to reflect changes
+    renderPortfolio()
 }
 
 //-------------------------> END LOCALSTORAGE LOGIC
@@ -254,6 +275,9 @@ const getCryptoData = (coins = coinList, currency = "AUD") => {
             }
 
             document.getElementById("coin-data-table").innerHTML = tableOutputHTML;
+
+            // Update portfolio page with new data
+            renderPortfolio()
 
             setRowEventListeners();
         })
@@ -332,7 +356,7 @@ const orderFormValid = (form) => {
 
     if(!["market", "limit"].includes(form['order-type'].value)) validForm = validForm && false
     if(!coinList.includes(form["coin"].value)) validForm = validForm && false
-    if(!form.quantity.checkValidity()) validForm = validForm && false
+    if(!form.quantity.checkValidity() && form.quantity.value > 0) validForm = validForm && false
     if(form['order-type'].value === 'limit') {
         // A limit price must be present
         if(form['limit-price'].value <= 0 || !form['limit-price'].checkValidity()) validForm = validForm && false
@@ -383,12 +407,46 @@ document.getElementById("sell-button").addEventListener("click", (e) => {
 
 
 //--------------------------> PORTFOLIO LOGIC
-// Get totals from each row in portfolio
-let totals = document.getElementsByClassName("row-total");
-let subtotal = 0;
-for (let total of totals) {
-    subtotal += Number(total.innerHTML);
+
+// Renderer to build portfolio table
+const renderPortfolio = () => {
+    // Get local storage data
+    const openPositions = JSON.parse(localStorage.getItem("openPositions"))
+    const currentPrices = JSON.parse(localStorage.getItem("currentPriceData")).RAW
+    const cashBalance = Math.round(JSON.parse(localStorage.getItem("cashBalance") * 100))/100
+    let portfolioValue = 0
+    let positionRow = ``
+
+    for(let position of openPositions) {
+        position.acquisitionValue = position.quantity * position.averagePrice
+        position.currentCoinPrice = currentPrices[position.coin].AUD.PRICE
+        position.currentValue = Math.round(((position.quantity * position.currentCoinPrice)*100))/100
+        position.profitLoss = Math.round((((position.currentValue - position.acquisitionValue)/position.acquisitionValue)*100))/100
+        portfolioValue += position.currentValue
+        
+        let plColour
+        if(position.profitLoss >= 0){
+            plColour = "text-success"
+        } else {
+            plColour = "text-danger"
+        }
+
+        positionRow += `
+            <tr id="portfolio-${position.coin}">
+                <td><img src="./images/${position.coin}.svg" alt="${position.coin}" /> ${cryptoData[position.coin]} ${position.coin}</td>
+                <td class="d-none d-sm-table-cell">${position.quantity}</td>
+                <td class="d-none d-md-table-cell">$${Math.round((position.averagePrice * 100000))/100000}</td>
+                <td class="${plColour}">${position.profitLoss}%</td>
+                <td>$${position.currentValue}</td>
+            </tr>
+        `
+    }
+
+    portfolioValue = Math.round((portfolioValue*100))/100
+
+    document.getElementById("cash-on-hand").innerHTML = "Cash on Hand: $" + cashBalance
+    document.getElementById("portfolio-value").innerHTML = "Portfolio Value: $" + portfolioValue
+    document.getElementById('portfolio-detail').innerHTML = positionRow
 }
-document.getElementById("portfolio-value").innerHTML += subtotal;
 
 window.onload = loadSVGLine;
