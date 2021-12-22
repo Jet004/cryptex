@@ -264,7 +264,7 @@ const getCryptoData = (coins = coinList, currency = "AUD") => {
                 }
                 tableOutputHTML += `
                   <tr scope="row" id="coin-${code}">
-                      <td class="td-name"><img src="./images/icon-svg/${code}.svg" alt="${code}"><span class="name px-2">${
+                      <td class="td-name"><img src="./images/icon-svg/${code.toLowerCase()}.svg" alt="${code}"><span class="name px-2">${
                     cryptoData[code]
                 }</span><span class="code pe-2">${code}</span></td>
                       <td class="td-price">$ ${Math.round(10000 * coinData.PRICE) / 10000}</td>
@@ -430,7 +430,7 @@ const renderPortfolio = () => {
         } else {
             plColour = "text-danger"
         }
-
+    
         positionRow += `
             <tr id="portfolio-${position.coin}">
                 <td><img src="./images/${position.coin.toLowerCase()}.svg" alt="${position.coin}" /> ${cryptoData[position.coin]} ${position.coin}</td>
