@@ -421,7 +421,7 @@ const renderPortfolio = () => {
         position.acquisitionValue = position.quantity * position.averagePrice
         position.currentCoinPrice = currentPrices[position.coin].AUD.PRICE
         position.currentValue = Math.round(((position.quantity * position.currentCoinPrice)*100))/100
-        position.profitLoss = Math.round((((position.currentValue - position.acquisitionValue)/position.acquisitionValue)*100))/100
+        position.profitLoss = Math.round((((position.currentValue - position.acquisitionValue)/position.acquisitionValue)*10000))/100
         portfolioValue += position.currentValue
         
         let plColour
@@ -433,7 +433,7 @@ const renderPortfolio = () => {
 
         positionRow += `
             <tr id="portfolio-${position.coin}">
-                <td><img src="./images/${position.coin}.svg" alt="${position.coin}" /> ${cryptoData[position.coin]} ${position.coin}</td>
+                <td><img src="./images/${position.coin.toLowerCase()}.svg" alt="${position.coin}" /> ${cryptoData[position.coin]} ${position.coin}</td>
                 <td class="d-none d-sm-table-cell">${position.quantity}</td>
                 <td class="d-none d-md-table-cell">$${Math.round((position.averagePrice * 100000))/100000}</td>
                 <td class="${plColour}">${position.profitLoss}%</td>
