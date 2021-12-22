@@ -301,8 +301,23 @@
                     </section>
                     <section class="col page flex-column text-light mt-3" id="trade-page">
                         <h1>Order Form</h1>
+                        <!-- <div class="row w-100 justify-content-center">
+                            <h4 id="order-coin" class="col-12 text-center">Bitcoin</h5>
+                            <h5 id="order-price" class="col-12 text-center">Current Price: $64000</h5>
+                            <h5 id="order-cash-balance" class="col-12">Cash Balance: $100000</h5>
+                            <div id="buy-max" class="col-6">Buy Max</div>
+                            <div id="sell-max" class="col-6">Sell Max</div>
+                        </div> -->
                         <div class="row w-100 justify-content-center">
+
                             <form id="order-form" class="col-9 col-sm-6 col-md-5 col-lg-4 pt-5 pb-3">
+                                <h4 id="order-coin" class="col-12 text-center">Bitcoin</h5>
+                                <h5 id="order-price" class="col-12 text-center">Current Price: $64000</h5>
+                                <h5 id="order-cash-balance" class="col-12 text-center">Cash Balance: $100000</h5>
+                                <div class="d-flex justify-content-between py-2 px-3">
+                                    <span id="buy-max">Buy Max</span>
+                                    <span id="sell-max">Sell Max</span>
+                                </div>
                                 <select
                                     class="form-select form-select-sm mb-4"
                                     name="order-type"
@@ -410,5 +425,24 @@
             <div class="me-2">Website created by:</div>
             <span>{ Jet Web Development }</span>
         </footer>
+
+
+        <!-- Set up generic modal. Content generated in JS file -->
+        <div id="modal" class="modal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"></h5>
+                        <button id="modal-close" type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body"></div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button id="modal-confirm" type="button" class="btn btn-primary"></button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </body>
 </html>

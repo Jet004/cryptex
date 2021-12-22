@@ -119,13 +119,17 @@ setInitialState()
 
 // Reset trading account
 const resetTradingAccoung = () => {
-    const confirmReset = confirm("Do you really want to delete all trading account data? This operation can't be undone")
-    if(confirmReset){
+    let title = "Confirm Account Reset"
+    let content = "Do you really want to delete all trading account data? This operation can't be undone"
+    let confirmBtnText = "Reset"
+
+    let action = () => {
         localStorage.clear()
         localStorage.setItem("page", currentPage)
         setInitialState()
         renderPortfolio()
     }
+    buildModal(title, content, confirmBtnText, action)
 }
 
 document.getElementById('reset-account-btn').addEventListener('click', () => {
@@ -381,7 +385,6 @@ const isValidOrder = (e, form, coinPrice) => {
         let currentCashBalance = localStorage.getItem('cashBalance')
     }
    
-
     return true
 }
 
@@ -391,11 +394,22 @@ const submitOrder = (e) => {
     let coinPrice = currentCoinData.PRICE
 
     if(orderFormValid(form)) {
-        if(isValidOrder(event, form, coinPrice)) executeOrder(e.target.value, form.coin.value, Number(form.quantity.value), coinPrice)
+        if(isValidOrder(event, form, coinPrice)) {
+            let title = "Confirm Market Order"
+            let content = "Content goes here"
+            let confirmBtnText = "Execute Order"
+
+            let action = () => {
+                executeOrder(e.target.value, form.coin.value, Number(form.quantity.value), coinPrice)
+            }
+            console.log("ran build modal")
+            buildModal(title, content, confirmBtnText, action)        
+        }
     }
 }
 
 document.getElementById("buy-button").addEventListener("click", (e) => {
+    console.log("BUY")
     submitOrder(e)
     
 });
@@ -450,3 +464,44 @@ const renderPortfolio = () => {
 }
 
 window.onload = loadSVGLine;
+
+
+
+//--------------------------> MODAL TEMPLATES
+
+// Set up modal element as BS modal - Using this approach allows manual
+// triggering of show and hide events
+let modalController = new bootstrap.Modal(document.getElementById("modal"), {keyboard: false})
+
+// Function to insert content into modal model
+const buildModal = (title, content, confirmBtnText, action) => {
+    modalController.show()
+
+    let modalTitle = document.getElementsByClassName("modal-title")[0]
+    let modalContent = document.getElementsByClassName('modal-body')[0]
+    let modalConfirm = document.getElementById('modal-confirm')
+
+    modalTitle.innerHTML = title
+    modalContent.innerHTML = content
+    modalConfirm.innerHTML = confirmBtnText
+
+    modalConfirm.addEventListener('click', () => {
+        action()
+        modalController.hide()
+    })
+}
+
+// Test modal
+let modal = document.getElementById('modal')
+modal.addEventListener('hidden.bs.modal', (event) => {
+    let modalTitle = document.getElementsByClassName("modal-title")[0]
+    let modalContent = document.getElementsByClassName('modal-body')[0]
+    let modalConfirm = document.getElementById('modal-confirm')
+
+    modalTitle.innerHTML = ""
+    modalContent.innerHTML = ""
+    modalConfirm.innerHTML = ""
+
+    // Reset confirm button to destroy event listeners
+    modalConfirm.outerHTML = modalConfirm.outerHTML
+})
