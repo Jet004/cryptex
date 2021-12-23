@@ -326,8 +326,8 @@ const updateOrderFormInfo = () => {
         
     if(coinList.includes(coinCode)){
         let orderCoin = cryptoData[coinCode]
-        let orderPrice = JSON.parse(localStorage.getItem('currentPriceData')).RAW[coinCode].AUD.PRICE
-        let orderCashBalance = JSON.parse(localStorage.getItem('cashBalance'))
+        let orderPrice = Math.round(JSON.parse(localStorage.getItem('currentPriceData')).RAW[coinCode].AUD.PRICE*100)/100
+        let orderCashBalance = Math.round(JSON.parse(localStorage.getItem('cashBalance'))*100)/100
         let orderCoinBalance = JSON.parse(localStorage.getItem('openPositions')).find(position => position.coin == coinCode)
 
         orderCoinElem.innerHTML = `${orderCoin} (${coinCode})`
