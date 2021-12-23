@@ -118,6 +118,10 @@ main #home-slogan {
     height: 450px;
 }
 
+#order-coin {
+    color: #ffc107;
+}
+
 #buy-max,
 #sell-max {
     color: rgb(72, 136, 253);

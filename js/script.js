@@ -223,6 +223,9 @@ const executeOrder = (type, coin, qty, price) => {
 
     // Update Portfolio to reflect changes
     renderPortfolio()
+
+    // Update order form info to reflect changes
+    updateOrderFormInfo()
 }
 
 //-------------------------> END LOCALSTORAGE LOGIC
@@ -283,6 +286,9 @@ const getCryptoData = (coins = coinList, currency = "AUD") => {
             // Update portfolio page with new data
             renderPortfolio()
 
+            // Update trade page balance/price info
+            updateOrderFormInfo()
+
             setRowEventListeners();
         })
         .catch(error => {
@@ -297,7 +303,7 @@ const updateData = setInterval(() => {
 
 //-------------------------> END LIVE DATA LOGIC
 
-//-------------------------> START EVENT LISTENERS AND MISC
+//-------------------------> TRADE LOGIC
 
 // Create select list for trade page
 let coinSelectHTML = ``;
@@ -307,7 +313,67 @@ for (const [code, name] of Object.entries(cryptoData)) {
         <option value="${code}">${name}</option>
     `;
 }
-document.getElementById("coin").innerHTML += coinSelectHTML;
+let coinSelect = document.getElementById("coin")
+coinSelect.innerHTML += coinSelectHTML;
+
+const updateOrderFormInfo = () => {
+    let coinCode = coinSelect.value
+    let orderCoinElem = document.getElementById("order-coin")
+    let orderPriceElem = document.getElementById("order-price")
+    let orderCashBalanceElem = document.getElementById("order-cash-balance")
+    let orderCoinBalanceElem = document.getElementById("order-coin-balance")
+    let buySellMaxElem = document.getElementById("buy-sell-max")
+        
+    if(coinList.includes(coinCode)){
+        let orderCoin = cryptoData[coinCode]
+        let orderPrice = JSON.parse(localStorage.getItem('currentPriceData')).RAW[coinCode].AUD.PRICE
+        let orderCashBalance = JSON.parse(localStorage.getItem('cashBalance'))
+        let orderCoinBalance = JSON.parse(localStorage.getItem('openPositions')).find(position => position.coin == coinCode)
+
+        orderCoinElem.innerHTML = `${orderCoin} (${coinCode})`
+        orderPriceElem.innerHTML = `Current Price: $${orderPrice}`
+        orderCashBalanceElem.innerHTML = `Cash Balance: $${orderCashBalance}`
+        if (orderCoinBalance){
+            orderCoinBalanceElem.innerHTML = `Coin Balance: ${orderCoinBalance.quantity} ${coinCode}`
+        } else {
+            orderCoinBalanceElem.innerHTML = `Coin Balance: 0 ${coinCode}`
+        }
+        buySellMaxElem.style.visibility = "visible"
+    } else {
+        orderCoinElem.innerHTML = ""
+        orderPriceElem.innerHTML = ""
+        orderCashBalanceElem.innerHTML = ""
+        orderCoinBalanceElem.innerHTML = ""
+        buySellMaxElem.style.visibility = "hidden"
+    }
+}
+
+// Buy max logic
+document.getElementById("buy-max").addEventListener('click', () => {
+    let orderPrice = JSON.parse(localStorage.getItem('currentPriceData')).RAW[coinSelect.value].AUD.PRICE
+    let orderCashBalance = JSON.parse(localStorage.getItem('cashBalance'))
+    let maxQuantity = Math.round((orderCashBalance/orderPrice)*100000)/100000
+    document.getElementById("quantity").value = maxQuantity
+})
+
+// Sell max logic
+document.getElementById("sell-max").addEventListener('click', () => {
+    let orderCoinPosition = JSON.parse(localStorage.getItem('openPositions')).find(position => position.coin == coinSelect.value)
+    let maxQuantity
+
+    if(orderCoinPosition){
+        maxQuantity = orderCoinPosition.quantity
+    } else {
+        maxQuantity = 0
+    }
+
+    document.getElementById("quantity").value = maxQuantity
+})
+
+// Set account info data when coin selected
+coinSelect.addEventListener('change', () => {
+    updateOrderFormInfo()
+})
 
 // Function to set clicked coin's name to trade form and show trade form
 let goToTrade = coinCode => {
@@ -315,6 +381,7 @@ let goToTrade = coinCode => {
     document.getElementById("trade-link").click();
     // Set crypto select to clicked crypto
     document.getElementById("coin").value = coinCode;
+    updateOrderFormInfo()
 };
 
 // Set click event listeners on table rows to populate trade form and "redirect"
@@ -360,7 +427,7 @@ const orderFormValid = (form) => {
 
     if(!["market", "limit"].includes(form['order-type'].value)) validForm = validForm && false
     if(!coinList.includes(form["coin"].value)) validForm = validForm && false
-    if(!form.quantity.checkValidity() && form.quantity.value > 0) validForm = validForm && false
+    if(!form.quantity.checkValidity() || form.quantity.value <= 0) validForm = validForm && false
     if(form['order-type'].value === 'limit') {
         // A limit price must be present
         if(form['limit-price'].value <= 0 || !form['limit-price'].checkValidity()) validForm = validForm && false
@@ -368,6 +435,7 @@ const orderFormValid = (form) => {
     if(!validForm){
         document.getElementById("order-form-error").innerHTML = "Invalid order: try again"
     }
+
     return validForm
 }
 
@@ -390,26 +458,25 @@ const isValidOrder = (e, form, coinPrice) => {
 
 const submitOrder = (e) => {
     let form = document.getElementById("order-form");
+    if(!orderFormValid(form)) return
+
     let currentCoinData = JSON.parse(localStorage.getItem('currentPriceData')).RAW[form.coin.value].AUD
     let coinPrice = currentCoinData.PRICE
 
-    if(orderFormValid(form)) {
-        if(isValidOrder(event, form, coinPrice)) {
-            let title = "Confirm Market Order"
-            let content = "Content goes here"
-            let confirmBtnText = "Execute Order"
+    if(isValidOrder(event, form, coinPrice)) {
+        let title = "Confirm Market Order"
+        let content = "Content goes here"
+        let confirmBtnText = "Execute Order"
 
-            let action = () => {
-                executeOrder(e.target.value, form.coin.value, Number(form.quantity.value), coinPrice)
-            }
-            console.log("ran build modal")
-            buildModal(title, content, confirmBtnText, action)        
+        let action = () => {
+            executeOrder(e.target.value, form.coin.value, Number(form.quantity.value), coinPrice)
         }
+
+        buildModal(title, content, confirmBtnText, action)        
     }
 }
 
 document.getElementById("buy-button").addEventListener("click", (e) => {
-    console.log("BUY")
     submitOrder(e)
     
 });
