@@ -106,6 +106,11 @@ let currentPage = localStorage.getItem("page");
 if (!currentPage) currentPage = "home";
 document.getElementById(currentPage + "-link").click();
 
+// Define GLOBAL variables
+let CashBalance
+let UserPreferences
+let CurrencyPreference
+
 // Set initial state
 const setInitialState = () => {
     if(!localStorage.getItem("currentPriceData")) localStorage.setItem("currentPriceData", '{}')
@@ -127,7 +132,7 @@ const resetTradingAccoung = () => {
         localStorage.clear()
         localStorage.setItem("page", currentPage)
         setInitialState()
-        renderPortfolio()
+        window.location.href = window.location.href
     }
     buildModal(title, content, confirmBtnText, action)
 }
@@ -228,6 +233,65 @@ const executeOrder = (type, coin, qty, price) => {
     updateOrderFormInfo()
 }
 
+// Manage user preferences
+// Set initial state if not already set
+const setInitialPreferences = () => {
+    if(!localStorage.getItem("userPreferences")){
+        let title = "Account Setup"
+        let content = `
+            <div>Welcome to CryptEx. Please set up your account preferences.</div>
+            <div class="d-flex flex-row px-4">
+                <label for="pref-currency">Currency</label>
+                <select id="pref-currency" class="mx-2">
+                    <option value="AUD">AUD</option>
+                    <option value-"USD>USD</option>
+                </select>
+            </div>
+        `
+        let confirmBtnText = "Save Changes"
+
+        let action = () => {
+            let currencyPreference = document.getElementById("pref-currency").value
+            let preferences = {}
+            preferences.currency = currencyPreference
+            localStorage.setItem("userPreferences", JSON.stringify(preferences))
+            updateGlobals()
+        }
+
+        buildModal(title, content, confirmBtnText, action) 
+        }
+}
+
+// document.getElementById('settings-btn').addEventListener('click', () => {
+//     let title = "Settings"
+//     let content = `
+//         <div class="d-flex flex-row px-4">
+//             <label for="pref-currency">Currency</label>
+//             <select id="pref-currency" class="mx-2">
+//                 <option value="AUD">AUD</option>
+//                 <option value-"USD>USD</option>
+//             </select>
+//         </div>
+//     `
+//     let confirmBtnText = "Save Changes"
+
+//     let action = () => {
+//         let currencyPreference = document.getElementById("pref-currency").value
+//         let preferences = JSON.parse(localStorage.getItem("userPreferences"))
+//         preferences.currency = currencyPreference
+//         localStorage.setItem("userPreferences", JSON.stringify(preferences))
+//         updateGlobals()
+//     }
+
+//     buildModal(title, content, confirmBtnText, action) 
+// })
+
+// Function to update global data store variables
+const updateGlobals = () => {
+    UserPreferences = JSON.parse(localStorage.getItem("userPreferences"))
+    CurrencyPreference = UserPreferences.currency
+}
+
 //-------------------------> END LOCALSTORAGE LOGIC
 
 //-------------------------> START LIVE DATA LOGIC
@@ -249,10 +313,10 @@ let cryptoData = {
     ALGO: "Algorand",
 };
 
-// Get data function - returns current crypto prices in AUD
-const getCryptoData = (coins = coinList, currency = "AUD") => {
+// Get data function - returns current crypto prices in user preferred currency
+const getCryptoData = (coins = coinList) => {
     coins = coins.join(",");
-    fetch(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${coins}&tsyms=${currency}`)
+    fetch(`https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${coins}&tsyms=AUD,USD`)
         .then(res => res.json())
         .then(data => {
 
@@ -263,7 +327,7 @@ const getCryptoData = (coins = coinList, currency = "AUD") => {
 
             // Loop over data and put in price table
             for (let [code, coinData] of Object.entries(data.RAW)) {
-                coinData = coinData.AUD;
+                coinData = coinData[CurrencyPreference];
                 if (coinData.CHANGEPCT24HOUR >= 0) {
                     changeColor = "text-success";
                 } else {
@@ -283,23 +347,12 @@ const getCryptoData = (coins = coinList, currency = "AUD") => {
 
             document.getElementById("coin-data-table").innerHTML = tableOutputHTML;
 
-            // Update portfolio page with new data
-            renderPortfolio()
-
-            // Update trade page balance/price info
-            updateOrderFormInfo()
-
             setRowEventListeners();
         })
         .catch(error => {
             console.error(error);
         });
 };
-getCryptoData();
-
-const updateData = setInterval(() => {
-    getCryptoData();
-}, 10000);
 
 //-------------------------> END LIVE DATA LOGIC
 
@@ -326,7 +379,7 @@ const updateOrderFormInfo = () => {
         
     if(coinList.includes(coinCode)){
         let orderCoin = cryptoData[coinCode]
-        let orderPrice = Math.round(JSON.parse(localStorage.getItem('currentPriceData')).RAW[coinCode].AUD.PRICE*100)/100
+        let orderPrice = Math.round(JSON.parse(localStorage.getItem('currentPriceData')).RAW[coinCode][CurrencyPreference].PRICE*100)/100
         let orderCashBalance = Math.round(JSON.parse(localStorage.getItem('cashBalance'))*100)/100
         let orderCoinBalance = JSON.parse(localStorage.getItem('openPositions')).find(position => position.coin == coinCode)
 
@@ -350,7 +403,7 @@ const updateOrderFormInfo = () => {
 
 // Buy max logic
 document.getElementById("buy-max").addEventListener('click', () => {
-    let orderPrice = JSON.parse(localStorage.getItem('currentPriceData')).RAW[coinSelect.value].AUD.PRICE
+    let orderPrice = JSON.parse(localStorage.getItem('currentPriceData')).RAW[coinSelect.value][CurrencyPreference].PRICE
     let orderCashBalance = JSON.parse(localStorage.getItem('cashBalance'))
     let maxQuantity = Math.round((orderCashBalance/orderPrice)*100000)/100000
     document.getElementById("quantity").value = maxQuantity
@@ -460,19 +513,44 @@ const submitOrder = (e) => {
     let form = document.getElementById("order-form");
     if(!orderFormValid(form)) return
 
-    let currentCoinData = JSON.parse(localStorage.getItem('currentPriceData')).RAW[form.coin.value].AUD
+    let currentCoinData = JSON.parse(localStorage.getItem('currentPriceData')).RAW[form.coin.value][CurrencyPreference]
     let coinPrice = currentCoinData.PRICE
+    let tradePair = `${CurrencyPreference}/${form.coin.value}`
+    let tradeQuantity = form.quantity.value
+    let orderValue = Math.round((coinPrice * form.quantity.value)*100)/100
+    let tradeFee = Math.round(orderValue)/100
+    let tradeTotal = Math.round((orderValue + tradeFee)*100)/100 // This needs to be modified to check if cash balance can cover trade + fees, else trade - fees
 
     if(isValidOrder(event, form, coinPrice)) {
         let title = "Confirm Market Order"
-        let content = "Content goes here"
+        let content = `
+            <div class="row d-flex flex-row justify-content-end px-5">
+                <div class="col-xs-10 col-sm-8 py-3">
+                    <div class="row">
+                        <div class="col-7">Price (${tradePair})</div><div class="col-5 text-end">$${coinPrice}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-7">Quantity</div><div class="col-5 text-end">${tradeQuantity}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-7">Order Value</div><div class="col-5 text-end">$${orderValue}</div>
+                    </div>
+                    <!-- <div class="row">
+                        <div class="col-7">Trade Fee</div><div class="col-5 text-end">${tradeFee}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-7">Total (inc. fees)</div><div class="col-5 text-end"><b>${tradeTotal}</b></div>
+                    </div> -->                  
+                </div>
+            </div>
+        `
         let confirmBtnText = "Execute Order"
 
         let action = () => {
             executeOrder(e.target.value, form.coin.value, Number(form.quantity.value), coinPrice)
         }
 
-        buildModal(title, content, confirmBtnText, action)        
+        buildModal(title, content, confirmBtnText, action)
     }
 }
 
@@ -500,7 +578,7 @@ const renderPortfolio = () => {
 
     for(let position of openPositions) {
         position.acquisitionValue = position.quantity * position.averagePrice
-        position.currentCoinPrice = currentPrices[position.coin].AUD.PRICE
+        position.currentCoinPrice = currentPrices[position.coin][CurrencyPreference].PRICE
         position.currentValue = Math.round(((position.quantity * position.currentCoinPrice)*100))/100
         position.profitLoss = Math.round((((position.currentValue - position.acquisitionValue)/position.acquisitionValue)*10000))/100
         portfolioValue += position.currentValue
@@ -529,10 +607,6 @@ const renderPortfolio = () => {
     document.getElementById("portfolio-value").innerHTML = "Portfolio Value: $" + portfolioValue
     document.getElementById('portfolio-detail').innerHTML = positionRow
 }
-
-window.onload = loadSVGLine;
-
-
 
 //--------------------------> MODAL TEMPLATES
 
@@ -572,3 +646,21 @@ modal.addEventListener('hidden.bs.modal', (event) => {
     // Reset confirm button to destroy event listeners
     modalConfirm.outerHTML = modalConfirm.outerHTML
 })
+
+
+// Run on page load
+window.onload = loadSVGLine;
+setInitialPreferences()
+getCryptoData()
+updateGlobals()
+renderPortfolio()
+updateOrderFormInfo()
+
+const updateData = setInterval(() => {
+    getCryptoData();
+    updateGlobals()
+    // Update portfolio page with new data
+    renderPortfolio()
+    // Update trade page balance/price info
+    updateOrderFormInfo()
+}, 5000);
