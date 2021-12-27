@@ -108,6 +108,7 @@ document.getElementById(currentPage + "-link").click();
 
 // Define GLOBAL variables
 let CashBalance
+let OpenPositions
 let UserPreferences
 let CurrencyPreference
 
@@ -290,6 +291,8 @@ const setInitialPreferences = () => {
 const updateGlobals = () => {
     UserPreferences = JSON.parse(localStorage.getItem("userPreferences"))
     CurrencyPreference = UserPreferences.currency
+    CashBalance = JSON.parse(localStorage.getItem("cashBalance"))
+    OpenPositions = JSON.parse(localStorage.getItem("openPositions"))
 }
 
 //-------------------------> END LOCALSTORAGE LOGIC
@@ -498,15 +501,28 @@ document.getElementById("order-form").addEventListener('input', () => {
 })
 
 // Check that there are enough funds/coins for the order to execute
-const isValidOrder = (e, form, coinPrice) => {
+const isValidOrder = (e, form, price) => {
+
+    let validOrder = true
 
     // Check to see if this is a buy or sell order
     if(e.target.value === 'Buy') {
-        
-        let currentCashBalance = localStorage.getItem('cashBalance')
+        // Order value can't be more than cash balance
+        let orderValue = Math.round((price * form.quantity.value)*100)/100
+        if(orderValue > CashBalance){
+            validOrder = validOrder && false
+            document.getElementById("order-form-error").innerHTML = "Invalid Order: Order value can not exceed your current cash balance"
+        }
+    } else if(e.target.value === 'Sell') {
+        // Order quantity can't be more than the number of coins owned
+        let currentPosition = OpenPositions.filter(position => position.coin === form.coin.value)[0]
+        if(!currentPosition || form.quantity.value > currentPosition.quantity){
+            validOrder = validOrder && false
+            document.getElementById("order-form-error").innerHTML = `Invalid Order: Order quantity can not exceed your current ${form.coin.value} balance`
+        }
     }
    
-    return true
+    return validOrder
 }
 
 const submitOrder = (e) => {
@@ -514,7 +530,7 @@ const submitOrder = (e) => {
     if(!orderFormValid(form)) return
 
     let currentCoinData = JSON.parse(localStorage.getItem('currentPriceData')).RAW[form.coin.value][CurrencyPreference]
-    let coinPrice = currentCoinData.PRICE
+    let coinPrice = Math.round(currentCoinData.PRICE*100)/100
     let tradePair = `${CurrencyPreference}/${form.coin.value}`
     let tradeQuantity = form.quantity.value
     let orderValue = Math.round((coinPrice * form.quantity.value)*100)/100
@@ -533,13 +549,13 @@ const submitOrder = (e) => {
                         <div class="col-7">Quantity</div><div class="col-5 text-end">${tradeQuantity}</div>
                     </div>
                     <div class="row">
-                        <div class="col-7">Order Value</div><div class="col-5 text-end">$${orderValue}</div>
+                        <div class="col-7">Est. Order Value</div><div class="col-5 text-end">$${orderValue}</div>
                     </div>
                     <!-- <div class="row">
                         <div class="col-7">Trade Fee</div><div class="col-5 text-end">${tradeFee}</div>
                     </div>
                     <div class="row">
-                        <div class="col-7">Total (inc. fees)</div><div class="col-5 text-end"><b>${tradeTotal}</b></div>
+                        <div class="col-7">Est.Total (inc. fees)</div><div class="col-5 text-end"><b>${tradeTotal}</b></div>
                     </div> -->                  
                 </div>
             </div>
