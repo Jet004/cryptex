@@ -133,6 +133,7 @@ const resetTradingAccoung = () => {
         localStorage.clear()
         localStorage.setItem("page", currentPage)
         setInitialState()
+        // Force refresh to ensure that initial data loads properly
         window.location.href = window.location.href
     }
     buildModal(title, content, confirmBtnText, action)
@@ -159,10 +160,8 @@ const adjustOpenPositions = (order) => {
                 quantity: order.quantity,
                 averagePrice: order.price
             })
-
-            // TODO: Show success message in message block
-
             console.log(openPositions)
+
         } else if(coinPosition.length > 0) {
             let totalQuantity = coinPosition[0].quantity + order.quantity
             let averagePrice = ((coinPosition[0].quantity * coinPosition[0].averagePrice) + (order.quantity * order.price))/totalQuantity
@@ -170,30 +169,21 @@ const adjustOpenPositions = (order) => {
 
             position.quantity = totalQuantity
             position.averagePrice = averagePrice
-
-            // TODO: Show success message in message block
         }
+
     } else if(order.type === "Sell") {
         if(coinPosition.length === 0) {
-
-            // TODO: Show error message in message block
-
             console.log("error: you can't sell a coin which you don't already own.")
+
         } else if(coinPosition.length > 0) {
             let position = openPositions[openPositions.indexOf(coinPosition[0])]
-
             if(order.quantity === position.quantity){
                 // Transaction resulted in all owned coins being sold
-                openPositions.pop(position)
-
-                // TODO: Show success message in message block
+                openPositions = openPositions.filter(item => item != position)
 
             } else if(order.quantity > 0 && order.quantity < position.quantity) {
                 // Sale quantity was less than the total number of coins on hand
                 position.quantity -= order.quantity
-
-                // TODO: Show success message in message block
-
             }
         }
     }
@@ -232,6 +222,10 @@ const executeOrder = (type, coin, qty, price) => {
 
     // Update order form info to reflect changes
     updateOrderFormInfo()
+
+    let alertMessage = `<em>Order Executed</em>: <b>${type} ${qty} ${coin} for $${qty * price} (${CurrencyPreference})</b>`
+    let alertColourScheme = (type === "Buy") ? 'alert-success' : 'alert-danger'
+    buildAlert(alertMessage, alertColourScheme)
 }
 
 // Manage user preferences
@@ -257,6 +251,8 @@ const setInitialPreferences = () => {
             preferences.currency = currencyPreference
             localStorage.setItem("userPreferences", JSON.stringify(preferences))
             updateGlobals()
+            // Force refresh to ensure that initial data loads properly
+            window.location.href = window.location.href
         }
 
         buildModal(title, content, confirmBtnText, action) 
@@ -300,7 +296,7 @@ const updateGlobals = () => {
 //-------------------------> START LIVE DATA LOGIC
 
 // Set default coin list
-let coinList = ["BTC", "ETH", "BNB", "ADA", "SOL", "XRP", "DOT", "LTC", "LINK", "UNI", "ALGO"];
+let coinList = ["BTC", "ETH", "BNB", "ADA", "SOL", "XRP", "DOT", "LTC", "LINK", "UNI", "ALGO", "LUNA"];
 
 let cryptoData = {
     BTC: "Bitcoin",
@@ -314,6 +310,7 @@ let cryptoData = {
     LINK: "Chainlink",
     UNI: "Uniswap",
     ALGO: "Algorand",
+    LUNA: "Terra Luna",
 };
 
 // Get data function - returns current crypto prices in user preferred currency
@@ -648,7 +645,7 @@ const buildModal = (title, content, confirmBtnText, action) => {
     })
 }
 
-// Test modal
+// Reset modal on close
 let modal = document.getElementById('modal')
 modal.addEventListener('hidden.bs.modal', (event) => {
     let modalTitle = document.getElementsByClassName("modal-title")[0]
@@ -662,6 +659,22 @@ modal.addEventListener('hidden.bs.modal', (event) => {
     // Reset confirm button to destroy event listeners
     modalConfirm.outerHTML = modalConfirm.outerHTML
 })
+
+
+//--------------------------> ALERT TEMPLATES
+const buildAlert = (alertContent, colourScheme = 'alert-primary') => {
+    let alertElement = document.getElementById('alert')
+    alertElement.style.display = 'block'
+    alertElement.innerHTML = alertContent
+    alertElement.classList.add(colourScheme)
+
+    // Remove and clear alert after 10 seconds
+    setTimeout(() => {
+        alertElement.style.display = "none"
+        alertElement.innerHTML = ``
+        alertElement.classList.remove(colourScheme)
+    }, 10000)
+}
 
 
 // Run on page load
