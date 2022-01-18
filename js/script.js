@@ -245,6 +245,10 @@ const setInitialPreferences = () => {
         `
         let confirmBtnText = "Save Changes"
 
+        // Hide close buttons to avoid user not selecting a currency preference
+        document.getElementById("modal-close").style.display = "none"
+        document.getElementById("modal-close-btn").style.display = "none"
+
         let action = () => {
             let currencyPreference = document.getElementById("pref-currency").value
             let preferences = {}
@@ -255,7 +259,7 @@ const setInitialPreferences = () => {
             window.location.href = window.location.href
         }
 
-        buildModal(title, content, confirmBtnText, action) 
+        buildModal(title, content, confirmBtnText, action, backdrop = "static") 
         }
 }
 
@@ -623,12 +627,13 @@ const renderPortfolio = () => {
 
 //--------------------------> MODAL TEMPLATES
 
-// Set up modal element as BS modal - Using this approach allows manual
-// triggering of show and hide events
-let modalController = new bootstrap.Modal(document.getElementById("modal"), {keyboard: false})
 
 // Function to insert content into modal model
-const buildModal = (title, content, confirmBtnText, action) => {
+const buildModal = (title, content, confirmBtnText, action, backdrop = true, keyboard = false) => {
+    // Set up modal element as BS modal - Using this approach allows manual
+    // triggering of show and hide events
+    let modalController = new bootstrap.Modal(document.getElementById("modal"), {backdrop: backdrop, keyboard: keyboard})
+
     modalController.show()
 
     let modalTitle = document.getElementsByClassName("modal-title")[0]
@@ -648,9 +653,12 @@ const buildModal = (title, content, confirmBtnText, action) => {
 // Reset modal on close
 let modal = document.getElementById('modal')
 modal.addEventListener('hidden.bs.modal', (event) => {
+    let modal = document.getElementById("modal")
     let modalTitle = document.getElementsByClassName("modal-title")[0]
     let modalContent = document.getElementsByClassName('modal-body')[0]
     let modalConfirm = document.getElementById('modal-confirm')
+    let modalClose = document.getElementById("modal-close")
+    let modalCloseBtn = document.getElementById("modal-close-btn")
 
     modalTitle.innerHTML = ""
     modalContent.innerHTML = ""
@@ -658,6 +666,11 @@ modal.addEventListener('hidden.bs.modal', (event) => {
 
     // Reset confirm button to destroy event listeners
     modalConfirm.outerHTML = modalConfirm.outerHTML
+
+    // Reset diplay properties for modal close buttons
+    modalClose.style.display = "inline-block"
+    modalCloseBtn.style.display = "inline-block"
+    modal.removeAttribute("data-backdrop")
 })
 
 
